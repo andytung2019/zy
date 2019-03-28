@@ -49,7 +49,6 @@ int en_queue(t_cmd_q *q, t_modcmd *p_cmd) {
 	
 	pthread_mutex_unlock(&q->mutex);
 //	sem_post(&q->full);
-
 	return q->len;
 
 }	
@@ -60,26 +59,21 @@ int de_queue(t_cmd_q *q, t_modcmd *pcmd) {
 	if(NULL == q || NULL == pcmd) {
 		return -1;
 	}
-	
+
+		
+	if(q->len <= 0 ) {
+		return 0;
+	}
 //	sem_wait(&q->full);
 	pthread_mutex_lock(&q->mutex);
-	if(q->len <= 0 ) {
-		//waiting_threads++;
-		//while(1 == queue_is_empty(q)) {
-		//	pthread_cond_wait(&cond, &mutex);
-		//}
-		//waiting_threads--;
-
-		pthread_mutex_unlock(&q->mutex);
-		return 0;
-	}	
-
 	memcpy((t_u8*)pcmd,(t_u8*)&q->cmd_list[q->head], sizeof(t_modcmd));
+	t_modcmd *p = &(q->cmd_list[q->head]);
+	
 	q->head = (q->head + 1) % MAX_CMD_NUM;
 	q->len -= 1;
 	pthread_mutex_unlock(&q->mutex);
 //	sem_post(&q->empty);
-    return q->len;	
+    return 1 ;	
 	
 
 }
@@ -143,6 +137,17 @@ int free_queue(t_cmd_q *q){
 	
 	pthread_mutex_destroy(&q->mutex);
 
+		if(q->len <= 0 ) {
+		//waiting_threads++;
+		//while(1 == queue_is_empty(q)) {
+		//	pthread_cond_wait(&cond, &mutex);
+		//}
+		//waiting_threads--;
+
+		pthread_mutex_unlock(&q->mutex);
+		return 0;
+	}	
+
 	printf("free the queue:%p\n", q);
 	return 0;
 }
@@ -155,6 +160,19 @@ void print_queue(t_cmd_q *q) {
      } 
 
      printf("queue:%p; size:%d, head:%d, tail:%d\n", q, q->len, q->head, q->tail);
+}
+
+void print_list(t_cmd_q *q) {
+
+	if (NULL == q) {
+		printf(" null queue \n");
+	
+	}
+	for(int i = 0; i < 48; i++ ) {
+		t_modcmd *p = &(q->cmd_list[i]);
+		printf(" %02x ", p->cmd_id);
+	}
+	printf("\n");
 }
 
 /*
