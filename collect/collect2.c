@@ -50,7 +50,7 @@ void* server_cmd(void* pv) {
 	while(1) {
 		int ret;
 
-//		ret = get_url(cmd_url);
+		ret = get_url(cmd_url);
 		sleep(10);
 	}	
 	

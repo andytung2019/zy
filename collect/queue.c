@@ -2,13 +2,11 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<string.h>
-//#include<pthread.h>
-//#include<semaphore.h>
 
 #include "queue.h"
 
-//t_cmd_q *q = NULL;
-
+//t_cmd_q *q = NULL; 测试用队列全局变量
+ //创建环形队列
 t_cmd_q* init_queue(void) {
 	t_cmd_q *q = NULL;
 	q = (t_cmd_q *)malloc(sizeof(t_cmd_q));
@@ -24,11 +22,12 @@ t_cmd_q* init_queue(void) {
 	q->tail = 0;
 	
 	pthread_mutex_init(&q->mutex, NULL);
-	sem_init(&q->full, 0, 0);
-	sem_init(&q->empty, 0, MAX_CMD_NUM);
+	//sem_init(&q->full, 0, 0);
+	//sem_init(&q->empty, 0, MAX_CMD_NUM);
 	return q;
 }
 
+//进入队列操作
 int en_queue(t_cmd_q *q, t_modcmd *p_cmd) {
 	t_modcmd *p;
 	if(NULL == q || NULL == p_cmd) {
@@ -53,7 +52,8 @@ int en_queue(t_cmd_q *q, t_modcmd *p_cmd) {
 
 }	
 
-//only one thread can de queue
+//出队列操作
+//注意，仅允许一个线程进行出队列操作
 int de_queue(t_cmd_q *q, t_modcmd *pcmd) {
 
 	if(NULL == q || NULL == pcmd) {
@@ -78,6 +78,7 @@ int de_queue(t_cmd_q *q, t_modcmd *pcmd) {
 
 }
 
+//重置环形队列,指针从0开始，清空所有内容
 int reset_queue(t_cmd_q *q) {
 	if( NULL == q) {
 		return -1;
@@ -95,6 +96,7 @@ int reset_queue(t_cmd_q *q) {
 	
 }
 
+//判断队列是不是空
 int queue_is_empty(t_cmd_q *q) {
 
 	if( NULL == q) {
@@ -108,7 +110,8 @@ int queue_is_empty(t_cmd_q *q) {
 	return 0;
 }
 
-int q_is_full(t_cmd_q *q) {
+//判断队列是不是满
+int queue_is_full(t_cmd_q *q) {
 	if(NULL == q) {
 		return 0;
 	}
@@ -120,6 +123,7 @@ int q_is_full(t_cmd_q *q) {
 	return 0;
 }
 
+//队列长度
 int len_queue(t_cmd_q *q) {
 	if(NULL == q ) {
 		return -1;
@@ -128,6 +132,7 @@ int len_queue(t_cmd_q *q) {
 	return q->len;
 }
 
+//释放队列
 int free_queue(t_cmd_q *q){
 	if( NULL == q) {
 		return -1;

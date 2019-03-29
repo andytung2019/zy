@@ -47,7 +47,7 @@ void* timer_cmd(void *arg) {
 
 void* server_cmd(void *arg) {
 	char *cmd_url="https://cn.bing.com";
-	int ret ;
+	int ret1,ret2 ;
 	char buf[1024];
 	t_modcmd cmd;
 	memset(&cmd, 0, sizeof(t_modcmd));
@@ -56,8 +56,11 @@ void* server_cmd(void *arg) {
 		
 	while(1) {
 		memset(buf, 0, 1024);
-    	ret = get_url(cmd_url, &buf);
-
+    	ret1 = get_url(cmd_url, &buf);
+		ret2 = parse_json_cmd(&buf, &cmd);	
+     	if( ret2 == 0) {
+          en_queue(q, &cmd);
+     	}	
 		sleep(5);
 	//print_queue(q);
 	}	
