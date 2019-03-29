@@ -5,7 +5,7 @@
 #include "cJSON.h"
 #include "mod_cmd.h"
 #include "queue.h"
-
+#include "server_cmd.h"
 
 int parse_json_cmd(char *p_data, t_modcmd *pcmd){
     float param ;
@@ -52,9 +52,6 @@ int parse_json_cmd(char *p_data, t_modcmd *pcmd){
 
 }
 
-int create_json() {
-
-}
 
 
 
@@ -94,6 +91,5 @@ int get_url(char *url_str, char *out) {
 	curl_easy_perform(curl);
 	curl_easy_cleanup(curl);
 
-	parse_json(out);		
 	return 0;
 }

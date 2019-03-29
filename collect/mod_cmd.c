@@ -2,7 +2,6 @@
 #include<fcntl.h>
 #include<unistd.h>
 #include<stdbool.h>
-#include<modbus/modbus.h>
 #include "mod_cmd.h"
 
 int read_register(modbus_t *mb, unsigned int addr, int len, unsigned short *ret){
@@ -89,6 +88,8 @@ int close_modbus(modbus_t *mb) {
 
 int read_all_regs( modbus_t *mb, unsigned char  arr_ret[]) {
 
+		int ret;
+
 		if (NULL == mb || NULL == arr_ret) {
 			return  -1;
 		}
@@ -110,6 +111,8 @@ int read_all_regs( modbus_t *mb, unsigned char  arr_ret[]) {
 
 
 int read_multi_regs( modbus_t *mb, unsigned char addr, int num, unsigned char arr_ret[] ){
+
+		int ret;
 
 		if (NULL == mb || NULL == arr_ret) {
 			return  -1;

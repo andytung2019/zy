@@ -1,4 +1,5 @@
 
+#include <modbus/modbus.h>
 #define ALL_REG_NUM  12
 
 int open_modbus(int id, modbus_t **ret_mb ); 
@@ -9,4 +10,4 @@ int read_multi_regs( modbus_t *mb, unsigned char addr, int num, unsigned char ar
 
 int read_regs( modbus_t *mb, unsigned char addr, int num, unsigned char arr_ret[] );
 
-int close_modbus(int id);
+int close_modbus(modbus_t *mb); 

@@ -46,7 +46,7 @@ void* timer_cmd(void *arg) {
 
 
 void* server_cmd(void *arg) {
-	char *cmd_url="https://cn.bing.com";
+	char *cmd_url="http://149.28.67.234:8080/ZyTest/send";
 	int ret1,ret2 ;
 	char buf[1024];
 	t_modcmd cmd;
@@ -60,8 +60,10 @@ void* server_cmd(void *arg) {
 		ret2 = parse_json_cmd(&buf, &cmd);	
      	if( ret2 == 0) {
           en_queue(q, &cmd);
-     	}	
-		sleep(5);
+     	} else {
+			printf(" parse server command error :%d\n", ret2);
+		}	
+		sleep(1);
 	//print_queue(q);
 	}	
 }
