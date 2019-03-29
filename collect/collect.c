@@ -3,7 +3,7 @@
 #include<pthread.h>
 #include<string.h>
 #include<time.h>
-#include<curl/curl.h>
+
 
 #include "queue.h"
 //#define REPORT_TIME (15*60) //every 15minutes  report
@@ -12,90 +12,6 @@
 #define TIMER_CMD_MAX 65535
 t_cmd_q *q = NULL;
 t_u32 timer_cmd_id = 0;
-
-
-
-
-
-int parse_json(char data) 
-{
-	/*************
-	    json的解析
-	***************************/
-	char data[] = "{\"name\":\"邱于涵\",\"age\":20}";
-	//json是json对象指针,json_name是 name对象的指针,json_age是age对象的指针
-	cJSON *json=0, *json_name=0, *json_age=0;
-	//解析数据包
-	json = cJSON_Parse(data);
-	//如果解析失败
-	if (!json)
-	{
-		printf("Error Before:", cJSON_GetErrorPtr());
-	}
-	else 
-	{
-		json_age = cJSON_GetObjectItem(json, "age");
-		//如果类型是 数字
-		if(json_age->type==cJSON_Number)
-		{
-			
-			printf("年龄:%d\n", json_age->valueint);
-		}
-		json_name = cJSON_GetObjectItem(json, "name");
-		//如果类型是 字符串
-		if (json_name->type == cJSON_String)
-		{
-			printf("姓名：%s\n", json_name->valuestring);
-		}
-		//释放内存
-		cJSON_Delete(json);
-	}
- 
-}
-
-
-
-
-
-size_t get_data(void *ptr, size_t size, size_t nmemeb,  void *stream) {
-			
-	if(stream == NULL) {
-	
-			return 0;
-	}	
-
-	printf("get data !\n");	
-	memcpy(stream, ptr, size*nmemeb);
-	
-	return size*nmemeb;
-}
-
-
-int get_url(char *url_str, char *out) {
-	if( NULL == out) {
-		printf(" out put ptr null \n");
-		return -1;
-	}
-	CURL *curl = NULL;
-
-	curl_global_init(CURL_GLOBAL_ALL);
-	curl = curl_easy_init();
-	
-	if(NULL == curl) {
-		printf("error easy init \n");
-		curl_easy_cleanup(curl);
-		return 0;
-	}
-	
-	curl_easy_setopt(curl, CURLOPT_URL, url_str);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, get_data);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, out);
-	curl_easy_perform(curl);
-	curl_easy_cleanup(curl);
-
-	pars_json(out);		
-	return 0;
-}
 
 
 
@@ -159,10 +75,10 @@ void* read_cmd(void *arg) {
 			printf("queue de null \n");
 		}	else {
 			printf("de queue cmd:%04x \n", cmd.cmd_id);
+			//run the cmd , and get return 
 		}
 		sleep(1);
 		
-		print_queue(q);
 	}	
 }
 
