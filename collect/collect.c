@@ -47,19 +47,26 @@ void* timer_cmd(void *arg) {
 
 void* server_cmd(void *arg) {
 	char *cmd_url="http://149.28.67.234:8080/ZyTest/send";
-	int ret1,ret2 ;
+	int ret, ret1,ret2 ;
 	char buf[1024];
 	t_modcmd cmd;
 	memset(&cmd, 0, sizeof(t_modcmd));
-	cmd.cmd_id = 0x003;	
-
+	
 		
 	while(1) {
 		memset(buf, 0, 1024);
-    	ret1 = get_url(cmd_url, &buf);
-		ret2 = parse_json_cmd(&buf, &cmd);	
+    	ret1 = get_url(cmd_url, (char*)&buf[0]);
+		ret2 = parse_json_cmd((char *)&buf[0], &cmd);	
      	if( ret2 == 0) {
-          en_queue(q, &cmd);
+   
+			ret = en_queue(q, &cmd);
+		  	if (ret < 0) {
+				printf("add server cmd:%04x to queue error !\n", cmd.cmd_id);			
+			 } else{
+				
+				printf("add server cmd:%04x to queue ok !\n", cmd.cmd_id);			
+			}
+
      	} else {
 			printf(" parse server command error :%d\n", ret2);
 		}	
@@ -80,7 +87,7 @@ void* read_cmd(void *arg) {
 			printf("queue de null \n");
 		}	else {
 			printf("de queue cmd:%04x \n", cmd.cmd_id);
-			//run the cmd , and get return 
+			//run the cmd , and get return
 		}
 		sleep(1);
 		
