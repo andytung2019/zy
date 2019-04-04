@@ -132,3 +132,109 @@ int read_multi_regs( modbus_t *mb, unsigned char addr, int num, unsigned char ar
 
 }
 
+
+
+int run_set_cmd(t_modcmd *pcmd){
+
+	//FILE *fout;
+	int ret = 0;
+	unsigned short a[12];
+	char out[24];
+    char line[2] ={"\n"};
+	modbus_t *mb;
+
+
+	memset((char*)a, 0, 24);
+	memset(out, 0, 24);
+
+    int start = 0;
+	int num = 2;
+
+
+
+	//open serial port
+    ret = open_modbus(1, &mb);
+	if(ret < 0 ) {
+		printf(" open mod bus error :%d\n", ret);	
+		return -1;
+    }
+
+	//close serial port
+	//close write file
+	modbus_close(mb);
+    modbus_free(mb);
+
+	return 0;
+}
+
+
+
+int run_query_cmd(t_modcmd *pcmd){
+
+	//FILE *fout;
+	int ret = 0;
+	unsigned short a[12];
+	char out[24];
+    char line[2] ={"\n"};
+	modbus_t *mb;
+
+
+	memset((char*)a, 0, 24);
+	memset(out, 0, 24);
+
+	int num = 0;
+	unsigned int addr = pcmd->param[0] ;
+      addr = addr << 16;
+      addr  += pcmd->param[1];
+
+	//open serial port
+    ret = open_modbus(1, &mb);
+	if(ret < 0 ) {
+		printf(" open mod bus error :%d\n", ret);	
+		return -1;
+    }
+	
+	start = addr;
+	num = 2;
+	if(pcmd->cmd == 8) {
+		num = 24;
+		start = 0xfc000000;
+	}
+
+	if(pcmd->cmd == 9) {
+	}	
+	ret = read_register(mb, start, num, a );
+
+	for( int i = 0; i < 12; i++ ) {
+				int j =2*i;
+				out[j] =(unsigned char) ((a[i]>>8)&0x00ff);
+				out[j+1] = (unsigned char)(a[i]&0x00FF);
+				printf(fout, "%02x", out[j]);
+				printf(fout, "%02x", out[j+1]);
+		}
+  
+
+	//close serial port
+	//close write file
+	modbus_close(mb);
+    modbus_free(mb);
+
+	return 0;
+}
+
+
+int run_cmd(t_modcmd *pcmd) {
+	if (NULL == pcmd) {
+
+		return -1;
+	}
+
+	if( pcmd->cmd < 0x05) {
+		run_set_cmd(pcmd);	
+
+	} else {
+		run_query_cmd(pcmd);
+	}
+
+
+}

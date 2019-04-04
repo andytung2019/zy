@@ -87,6 +87,7 @@ void* read_cmd(void *arg) {
 			printf("queue de null \n");
 		}	else {
 			printf("de queue cmd:%04x \n", cmd.cmd_id);
+			
 			//run the cmd , and get return
 		}
 		sleep(1);
