@@ -1,8 +1,11 @@
 #include<stdio.h>
 #include<fcntl.h>
 #include<unistd.h>
+#include<string.h>
 #include<stdbool.h>
+
 #include "mod_cmd.h"
+#include "queue.h"
 
 int read_register(modbus_t *mb, unsigned int addr, int len, unsigned short *ret){
 
@@ -183,9 +186,7 @@ int run_query_cmd(t_modcmd *pcmd){
 	memset(out, 0, 24);
 
 	int num = 0;
-	unsigned int addr = pcmd->param[0] ;
-      addr = addr << 16;
-      addr  += pcmd->param[1];
+	unsigned int addr = 0;
 
 	//open serial port
     ret = open_modbus(1, &mb);
@@ -194,7 +195,7 @@ int run_query_cmd(t_modcmd *pcmd){
 		return -1;
     }
 	
-	start = addr;
+	int start = addr;
 	num = 2;
 	if(pcmd->cmd == 8) {
 		num = 24;
@@ -209,8 +210,8 @@ int run_query_cmd(t_modcmd *pcmd){
 				int j =2*i;
 				out[j] =(unsigned char) ((a[i]>>8)&0x00ff);
 				out[j+1] = (unsigned char)(a[i]&0x00FF);
-				printf(fout, "%02x", out[j]);
-				printf(fout, "%02x", out[j+1]);
+				printf("%02x", out[j]);
+				printf("%02x", out[j+1]);
 		}
   
 

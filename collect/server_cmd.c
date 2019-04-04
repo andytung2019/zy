@@ -57,7 +57,7 @@ int parse_json_cmd(char *p_data, t_modcmd *pcmd){
 	// set modbus cmd
 	pcmd->cmd_id = cmd_id; 
 	pcmd->dev_id = dev_id;
-   	pcmd->param = param;
+   	pcmd->param = (unsigned int)param;
 
 	return 0;
 }

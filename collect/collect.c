@@ -21,11 +21,7 @@ void* timer_cmd(void *arg) {
 	memset(&cmd, 0, sizeof(t_modcmd));	
 	
 	cmd.dev_id = 0x01;
-	cmd.cmd = 0x03;
-	cmd.param[0] = 0xfc;
-	cmd.param[1] = 0x00;
-	cmd.param[2] = 0x00;
-	cmd.param[3] = 0x0B;
+	cmd.cmd = 13;
  	
     while(1) {
 		timer_cmd_id = (timer_cmd_id + 1) % TIMER_CMD_MAX;
