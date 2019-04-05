@@ -1,3 +1,4 @@
+#include<errno.h>
 #include<stdio.h>
 #include<fcntl.h>
 #include<unistd.h>
@@ -6,6 +7,7 @@
 
 #include "mod_cmd.h"
 #include "queue.h"
+
 
 int read_register(modbus_t *mb, unsigned int addr, int len, unsigned short *ret){
 
@@ -27,9 +29,41 @@ int read_register(modbus_t *mb, unsigned int addr, int len, unsigned short *ret)
 	rc = modbus_read_registers(mb, addr, len, ret);
 	if(rc < 0 ){
 		printf(" read register error\n");
+		modbus_strerror(errno);
 	}
 	return rc;
 }
+
+
+
+
+int write_register(modbus_t *mb, unsigned int addr, unsigned int value ){
+
+	int rc;
+
+	if(NULL == mb){
+		printf(" modbus is null\n");
+		return -1;
+	}
+
+    rc = modbus_connect(mb);
+    printf("modbus_connect: %d \n",rc);
+
+    if (rc == -1) {
+            printf("Connection modbus host failed\n");
+            return -1;
+     }
+	
+	rc = modbus_write_register(mb, addr,value);
+	if(rc < 0 ){
+		printf(" read register error\n");
+		modbus_strerror(errno);
+	}
+	return rc;
+}
+
+
+
 
 int open_modbus(int id, modbus_t **ret_mb ) {
 	modbus_t *mb;
@@ -82,8 +116,8 @@ int close_modbus(modbus_t *mb) {
 		return -1;
 	}
 
-	modbus_close(mb);
-    modbus_free(mb);
+   modbus_close(mb);
+   modbus_free(mb);
 	
 	return 0;
 }
@@ -97,7 +131,7 @@ int read_all_regs( modbus_t *mb, unsigned char  arr_ret[]) {
 			return  -1;
 		}
 		
-		unsigned int addr = 0xFC00;
+		unsigned int addr = START_REG_ADDR;
 		
 		memset(arr_ret, 0, ALL_REG_NUM*2);
 		
@@ -135,58 +169,18 @@ int read_multi_regs( modbus_t *mb, unsigned char addr, int num, unsigned char ar
 
 }
 
-
-
-int run_set_cmd(t_modcmd *pcmd){
-
-	//FILE *fout;
-	int ret = 0;
-	unsigned short a[12];
-	char out[24];
-    char line[2] ={"\n"};
-	modbus_t *mb;
-
-
-	memset((char*)a, 0, 24);
-	memset(out, 0, 24);
-
-    int start = 0;
-	int num = 2;
-
-
-
-	//open serial port
-    ret = open_modbus(1, &mb);
-	if(ret < 0 ) {
-		printf(" open mod bus error :%d\n", ret);	
-		return -1;
-    }
-
-	//close serial port
-	//close write file
-	modbus_close(mb);
-    modbus_free(mb);
-
-	return 0;
-}
-
-
-
 int run_query_cmd(t_modcmd *pcmd){
 
 	//FILE *fout;
 	int ret = 0;
 	unsigned short a[12];
 	char out[24];
-    char line[2] ={"\n"};
 	modbus_t *mb;
 
 
 	memset((char*)a, 0, 24);
 	memset(out, 0, 24);
 
-	int num = 0;
-	unsigned int addr = 0;
 
 	//open serial port
     ret = open_modbus(1, &mb);
@@ -195,16 +189,19 @@ int run_query_cmd(t_modcmd *pcmd){
 		return -1;
     }
 	
-	int start = addr;
-	num = 2;
-	if(pcmd->cmd == 8) {
-		num = 24;
-		start = 0xfc000000;
+	int num = 1;
+	unsigned int addr = START_REG_ADDR + pcmd->cmd -1;
+	if(pcmd->cmd == 13) {
+		num = 12;
+		addr = START_REG_ADDR;
 	}
 
-	if(pcmd->cmd == 9) {
+	if(pcmd->cmd == 14) {
+		addr = START_REG_ADDR;
+		num = 1;
+	
 	}	
-	ret = read_register(mb, start, num, a );
+	ret = read_register(mb, addr, num, a );
 
 	for( int i = 0; i < 12; i++ ) {
 				int j =2*i;
@@ -224,6 +221,45 @@ int run_query_cmd(t_modcmd *pcmd){
 }
 
 
+
+int run_set_cmd(t_modcmd *pcmd){
+
+	//FILE *fout;
+	int ret = 0;
+	unsigned short a[12];
+	char out[24];
+	modbus_t *mb;
+
+
+	memset((char*)a, 0, 24);
+	memset(out, 0, 24);
+
+
+	//open serial port
+        ret = open_modbus(1, &mb);
+	if(ret < 0 ) {
+		printf(" open mod bus error :%d\n", ret);	
+		return -1;
+    }
+	
+	int num = 1;
+	unsigned int addr = START_REG_ADDR + pcmd->cmd -1;
+	unsigned int value = pcmd->param;
+
+	ret = write_register(mb, addr, value);
+	if(ret < 0 ) {
+		printf(" set mb command error\n");
+	}
+
+	//close serial port
+	//close write file
+	modbus_close(mb);
+        modbus_free(mb);
+
+	return 0;
+}
+
+
 int run_cmd(t_modcmd *pcmd) {
 	if (NULL == pcmd) {
 
@@ -237,5 +273,6 @@ int run_cmd(t_modcmd *pcmd) {
 		run_query_cmd(pcmd);
 	}
 
+	return 0;
 
 }

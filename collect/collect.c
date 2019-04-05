@@ -85,6 +85,7 @@ void* read_cmd(void *arg) {
 			printf("de queue cmd:%04x \n", cmd.cmd_id);
 			
 			//run the cmd , and get return
+			run_cmd(&cmd);
 		}
 		sleep(1);
 		
@@ -107,7 +108,7 @@ int main(void) {
 	t_modcmd cmd;
 	
 	int ret1, ret2, ret3;
-	ret1 = pthread_create(&th_server_cmd, NULL, server_cmd, NULL);
+//	ret1 = pthread_create(&th_server_cmd, NULL, server_cmd, NULL);
 	ret2 = pthread_create(&th_timer_cmd, NULL,timer_cmd, NULL);
 	ret3 = pthread_create(&th_read_cmd, NULL, read_cmd, NULL);
 	while(1) {
