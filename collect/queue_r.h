@@ -1,7 +1,7 @@
 #include"typehead.h"
 #include<pthread.h>
 
-#define RET_PARAM_BYTES  12
+#define RET_PARAM_BYTES 24 
 #define MAX_RET_NUM 1024
 
 typedef struct {
@@ -23,5 +23,12 @@ typedef struct {
 
 
 	
+
+
+t_ret_q* init_rqueue(void);
+
+int de_rqueue(t_ret_q *q, t_mod_ret *pcmd);
+int reset_rqueue(t_ret_q *q);
+int en_rqueue(t_ret_q *q, t_mod_ret *p_cmd);
 
 

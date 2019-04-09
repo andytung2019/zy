@@ -7,7 +7,7 @@
 
 #include "mod_cmd.h"
 #include "queue.h"
-
+#include "queue_r.h"
 
 int read_register(modbus_t *mb, unsigned int addr, int len, unsigned short *ret){
 
@@ -72,7 +72,7 @@ int open_modbus(int id, modbus_t **ret_mb ) {
 	struct timeval response_timeout;
 	uint32_t tv_sec = 0;
 	uint32_t tv_usec = 0;
-	response_timeout.tv_sec = 5;
+	response_timeout.tv_sec = 3;
 	response_timeout.tv_usec = 0;
 	
 	mb= modbus_new_rtu("/dev/ttyUSB0", 9600, 'N', 8, 1);
@@ -169,21 +169,18 @@ int read_multi_regs( modbus_t *mb, unsigned char addr, int num, unsigned char ar
 
 }
 
-int run_query_cmd(t_modcmd *pcmd){
+int run_query_cmd(t_modcmd *pcmd, t_mod_ret *pret){
 
-	//FILE *fout;
 	int ret = 0;
 	unsigned short a[12];
-	char out[24];
 	modbus_t *mb;
 
 
-	memset((char*)a, 0, 24);
-	memset(out, 0, 24);
+	memset((unsigned char*)a, 0, 24);
 
 
 	//open serial port
-    ret = open_modbus(1, &mb);
+    	ret = open_modbus(1, &mb);
 	if(ret < 0 ) {
 		printf(" open mod bus error :%d\n", ret);	
 		return -1;
@@ -202,16 +199,24 @@ int run_query_cmd(t_modcmd *pcmd){
 	
 	}	
 	ret = read_register(mb, addr, num, a );
+	if(ret < 0 ) {
 
-	for( int i = 0; i < 12; i++ ) {
+		return -1;
+	} else {
+
+		pret->cmd_id = pcmd->cmd_id;
+		pret->dev_id = pcmd->dev_id;
+		pret->cmd = pcmd->cmd;
+		memset(pret->param, 0, RET_PARAM_BYTES);
+		for( int i = 0; i < 12; i++ ) {
 				int j =2*i;
-				out[j] =(unsigned char) ((a[i]>>8)&0x00ff);
-				out[j+1] = (unsigned char)(a[i]&0x00FF);
-				printf("%02x", out[j]);
-				printf("%02x", out[j+1]);
+				pret->param[j] =(unsigned char) ((a[i]>>8)&0x00ff);
+				pret->param[j+1] = (unsigned char)(a[i]&0xFF );
+				printf("%02x ", pret->param[j]);
+				printf("%02x ", pret->param[j+1]);
 		}
-  
-
+  	}
+	printf("\n");
 	//close serial port
 	//close write file
 	modbus_close(mb);
@@ -222,18 +227,15 @@ int run_query_cmd(t_modcmd *pcmd){
 
 
 
-int run_set_cmd(t_modcmd *pcmd){
+int run_set_cmd(t_modcmd *pcmd, t_mod_ret *pret){
 
 	//FILE *fout;
 	int ret = 0;
 	unsigned short a[12];
-	char out[24];
 	modbus_t *mb;
 
 
 	memset((char*)a, 0, 24);
-	memset(out, 0, 24);
-
 
 	//open serial port
         ret = open_modbus(1, &mb);
@@ -260,17 +262,23 @@ int run_set_cmd(t_modcmd *pcmd){
 }
 
 
-int run_cmd(t_modcmd *pcmd) {
+int run_cmd(t_modcmd *pcmd, t_mod_ret *pret) {
+	int ret;
+
 	if (NULL == pcmd) {
 
 		return -1;
 	}
-
+	
+	if ( pcmd->cmd == 0x00) {
+		return -2;
+	}
 	if( pcmd->cmd < 0x05) {
-		run_set_cmd(pcmd);	
+		ret = run_set_cmd(pcmd,pret );	
 
 	} else {
-		run_query_cmd(pcmd);
+		ret = run_query_cmd(pcmd,pret);
+		return ret;
 	}
 
 	return 0;

@@ -1,49 +1,48 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curl/curl.h>
 #include "report.h"
 #include "cJSON.h"
 #include "queue.h"
-#include <stdio.h>
-#include <string.h>
-#include <curl/curl.h>
-
+#include "queue_r.h"
 
 #define CHARS_LEN 30
+#define STATION_ID 20001
 
+char *item[] = { "power","timer", "set_temp","set_humid",
+		"env_tempe", "env_humid", "onload", "error", 
+		"tempe_1",  "tempe_2", "tempe_3", "tempe_4"
+};
 char *bit[] = { "Bit0", "Bit1", "Bit2", "Bit3", "Bit4", 
                 "Bit5", "Bit6", "Bit7", "Bit8", "Bit9",
    "Bit10", "Bit11", "Bit12", "Bit13", "Bit14", "Bit15" };
 
-int report(unsigned char* ip, char* json)
-{   
-
-  return 0;
-}
+char *bools[] = {"0", "1"};
 
 
-int json_item_power(unsigned char two_byte[], char *json_name, char *json_value) {
-    cJSON* jsn_power = NULL;
-
-    jsn_power = cJSON_CreateObject();
-    if( NULL == jsn_power ) {
-        return -1;
+int json_item_power(unsigned char *ptr, char* json_name,  char *json_value) {
+    if(NULL == ptr || NULL == json_value) {
+    	return -1;
     }
-
-    json_name = "power";
     
-    if ((two_byte[0] == 0x00) && (two_byte[1] == 0xff)) {
-        json_value="1";
+    strcpy(json_name, "power");
+    
+    if ((*ptr == 0x00) && (*(ptr+1) == 0xff)) {
+        strcpy(json_value, "1");
         return 0;
     } 
 
-     if ((two_byte[0] == 0xff) && (two_byte[1] == 0x00)) {
-        json_value ="0";
+     if ((*ptr == 0xff) && (*(ptr+1) == 0x00)) {
+        strcpy(json_value, "0");
         return 0;
     } 
+
 
     return -2;
 }
 
-
-int json_item_timer(unsigned char bytes[], char *json_name, int *json_value) {
+int json_item_timer(unsigned char *ptr, char *json_name, char *json_value) {
 
      int ret = 0;
      int value = 0;
@@ -53,16 +52,16 @@ int json_item_timer(unsigned char bytes[], char *json_name, int *json_value) {
      }     
     
      strcpy(json_name, "timer");
-     value =(int)bytes[0]*256 + (int)bytes[1]; 
+     value = *(ptr+1); 
      if (value > 24 || value < 0) {
-         *json_value = 0;
+         value = 0;
      }
-     *json_value = value;
+     sprintf(json_value, "%d", value);
      return 0;
 
 }
 
-int json_item_set_tem(unsigned char bytes[], char *json_name, float *json_value) {
+int json_item_set_temp(unsigned char *ptr, char *json_name,char *json_value) {
     int ret = 0;
     float value = 0;
 
@@ -71,12 +70,13 @@ int json_item_set_tem(unsigned char bytes[], char *json_name, float *json_value)
      }     
 
      strcpy(json_name, "set_tempe");
-     value =((float)bytes[0]*256 + (float)bytes[1])/10;
-     *json_value = value;
+     value =(float)(256*(*ptr) + *(ptr+1));
+     value = value/10;
+     sprintf(json_value, "%3.1f", value);
      return 0;
 }
 
-int json_item_set_hum(unsigned char bytes[], char *json_name, float *json_value) {
+int json_item_set_humid(unsigned char *ptr, char *json_name, char *json_value) {
     int ret = 0;
     float value = 0;
 
@@ -85,27 +85,31 @@ int json_item_set_hum(unsigned char bytes[], char *json_name, float *json_value)
      }     
 
      strcpy(json_name, "set_humid");
-     value =((float)bytes[0]*256 + (float)bytes[1])/10;
-     *json_value = value;
+     value =(float)(256*(*ptr) + *(ptr+1));
+     value = value/10;
+     sprintf(json_value, "%3.1f", value);
+
      return 0;
 }
 
 
-int json_item_env_tem(unsigned char bytes[], char *json_name, float *json_value) {
+int json_item_env_tempe(unsigned char* ptr, char *json_name, char *json_value) {
     int ret = 0;
-    float value = 0;
+    int value = 0;
 
      if(NULL == json_name || NULL == json_value) {
          return -1;
      }     
 
      strcpy(json_name, "env_tempe");
-     value =((int)bytes[0]*256 + (int)bytes[1])/10;
-     *json_value = value;
+     value = (int)(*(ptr+1));
+    // value =  (int)(((int)(*ptr))<<8 +  *(ptr + 1)) ;
+     sprintf(json_value, "%d", value);
+
      return 0;
 }
 
-int json_item_env_hum(unsigned char bytes[], char *json_name, float *json_value) {
+int json_item_env_humid(unsigned char *ptr, char *json_name, char *json_value) {
     int ret = 0;
     float value = 0;
 
@@ -113,42 +117,18 @@ int json_item_env_hum(unsigned char bytes[], char *json_name, float *json_value)
          return -1;
      }     
 
+
      strcpy(json_name, "env_humid");
-     value =((float)bytes[0]*256 + (float)bytes[1])/10;
-     *json_value = value;
-     return 0;
-}
-
-int json_obj_onload(unsigned char bytes[],  cJSON* json_onload) {
-    int ret = 0;
-    unsigned char a= 0;
-    char value;
-
-    
-    if(NULL == json_onload) {
-         return -1;
-     }     
-     // 解释负载,bit0-bit7有意义，其它均为0
-     a = bytes[1];
-
-     for(int i = 0; i < 8; i++) {
-
-          if( a & 0x01) {
-		value = '1';
-          }  else {
-                value = '0';
-          }
-
-          cJSON_AddItemToObject(json_onload,bit[i], cJSON_CreateString(value));
-          a = a >> 1;
-          
-     }
+     value =(float)(256*(*ptr) + *(ptr+1));
+     value = value/10;
+     sprintf(json_value, "%3.1f", value);
 
      return 0;
-}
+
+  }
 
 /*故障状态 2字节 */
-int json_obj_error(unsigned char bytes[],  cJSON* json_err) {
+int json_obj_error(unsigned char *ptr,  cJSON* json_err) {
     int ret = 0;
     unsigned short a= 0;
     char value;
@@ -157,7 +137,7 @@ int json_obj_error(unsigned char bytes[],  cJSON* json_err) {
          return -1;
      }     
      /* 解释error,bit0-bit15有意义*/
-     a = bytes[1] + (unsigned short)bytes[0] << 8;
+     a = *(ptr + 1) + (unsigned short)(*ptr) << 8;
 
      for(int i = 0; i < 16; i++) {
 
@@ -175,32 +155,182 @@ int json_obj_error(unsigned char bytes[],  cJSON* json_err) {
      return 0;
 }
 
-char* create_json( t_node *p_tnode ){   
+int json_item__tempe_A2D(unsigned char* ptr, char *json_name, char *json_value) {
+    int ret = 0;
+    int value = 0;
+    
+     if(NULL == json_name || NULL == json_value) {
+         return -1;
+     }     
+
+     strcpy(json_name, "env_tempe");
+     value = (int)(*(ptr + 1));
+     sprintf(json_value, "%d", value);
+
+     return 0;
+}
+
+cJSON* create_json_all( t_mod_ret *pret ){  
+#define  CHARS_LEN 24
+
+	char name[CHARS_LEN];
+	char out[CHARS_LEN];
+	
+	if ( NULL  == pret) {
+		return NULL;
+	}
+	
+	cJSON *root= cJSON_CreateObject();
+	cJSON *json_onload;// = cJSON_CreateObject();
+	cJSON *json_error; //= cJSON_CreateObject();
+
+	//0-1 power
+	memset(out, 0, CHARS_LEN);
+	memset(name, 0, CHARS_LEN);
+	json_item_power(&(pret->param[0]),name, out);
+	cJSON_AddStringToObject(root,name, out);
+
+	//2-3 timer
+	memset(out, 0, CHARS_LEN);
+	memset(name, 0, CHARS_LEN);
+	json_item_timer(&(pret->param[2]),name, out);
+	cJSON_AddStringToObject(root,name, out);
+
+	//4-5 set_temperature	
+	memset(out, 0, CHARS_LEN);
+	memset(name, 0, CHARS_LEN);
+	json_item_set_temp(&(pret->param[4]),name, out);
+	cJSON_AddStringToObject(root,name, out);
+	
+	//6-7 set_humidity
+	memset(out, 0, CHARS_LEN);
+	memset(name, 0, CHARS_LEN);
+	json_item_set_humid(&(pret->param[6]),name, out);
+	cJSON_AddStringToObject(root,name, out);
+
+
+
+	//8-9 env_temp
+	memset(out, 0, CHARS_LEN);
+	memset(name, 0, CHARS_LEN);
+	json_item_env_tempe(&(pret->param[8]),name, out);
+	cJSON_AddStringToObject(root,name, out);
+
+	//10-11 env_humid
+	memset(out, 0, CHARS_LEN);
+	memset(name, 0, CHARS_LEN);
+	json_item_env_humid(&(pret->param[10]),name, out);
+	cJSON_AddStringToObject(root,name, out);
+	
+	//12-13 onload
+    	cJSON_AddItemToObject(root,"onload",json_onload=cJSON_CreateObject() );
+        int load = pret->param[13];
+        printf("%d , %s,  %s \n", load, bools[0], bools[1]);	
+	for(int i = 0; i < 8; i++) {
+          cJSON_AddStringToObject(json_onload,bit[i], bools[load&0x01]);
+          load = load >> 1;
+       }
+
+
+	//14-15 error
+   	cJSON_AddItemToObject(root,"error",json_error=cJSON_CreateObject() );
+	printf(" %02x , %02x \n", pret->param[15], pret->param[14]);
+     	unsigned  short  err = (unsigned short)(pret->param[14])<<8 + (unsigned short)(pret->param[15]);
+	printf("%04x ", err);
+	for(int i = 0; i < 16; i++) {
+          cJSON_AddStringToObject(json_error,bit[i], bools[err&0x0001]);
+          err =err >> 1;
+       }
+
+
+	//16-23
+	memset(out, 0, CHARS_LEN);
+	memset(name, 0, CHARS_LEN);
+	json_item_env_tempe(&(pret->param[16]),name, out);
+	strcpy(name, "tempe_1");
+	cJSON_AddStringToObject(root,name, out);
+
+	memset(out, 0, CHARS_LEN);
+	memset(name, 0, CHARS_LEN);
+	json_item_env_tempe(&(pret->param[18]),name, out);
+	strcpy(name, "tempe_2");
+	cJSON_AddStringToObject(root,name, out);
+
+	memset(out, 0, CHARS_LEN);
+	memset(name, 0, CHARS_LEN);
+	json_item_env_tempe(&(pret->param[20]),name, out);
+	strcpy(name, "tempe_3");
+	cJSON_AddStringToObject(root,name, out);
+
+	memset(out, 0, CHARS_LEN);
+	memset(name, 0, CHARS_LEN);
+	json_item_env_tempe(&(pret->param[22]),name, out);
+	strcpy(name, "tempe_4");
+	cJSON_AddStringToObject(root,name, out);
+
+	printf("%s\n", cJSON_Print(root));
+	return NULL ;
+}
+
+#if 0
+cJSON* create_json_all( t_mod_ret *pret ){  
+    
+    int len = 0;
+    printf(" create json,  param :\n");
+    {
+	    for (int i = 0; i < 24; i++) {
+	    	printf(" %02x ", pret->param[i]);
+	    }
+    }
+    len  = pret->param[2];
+    if( len != 24) {
+    	return -1;
+    }
+    
     int ret = 0;
     char json_name[CHARS_LEN];
     char json_value[CHARS_LEN];
 
     cJSON* jsonroot = NULL;
     
-    if(NULL == p_tnode) {
+    if(NULL == pret) {
         return NULL;
     }
-
     jsonroot = cJSON_CreateObject();
     if( NULL == jsonroot ) {
         return NULL;
     }
-   
+
+       
     memset(json_name, 0, CHARS_LEN);
     memset(json_value, 0, CHARS_LEN);
-    ret = json_item_power(&p_tnode->record[0], json_name, json_value);  
+    ret = json_item_power(&pret->param[3], json_name, json_value); 
+    cJSON_AddStringToObject(jsonroot, json_name, json_value);
+   
+ 
+    return jsonroot;
+}
+
+#endif 
+
+int send_report(t_mod_ret *pret){
+	if(pret == NULL) {
+		return -1;
+	}
+
+	cJSON *json =  create_json_all(pret);
+	if (json != NULL) {
+     		char* buf = cJSON_Print(json);
+       		printf("%s", buf);
+	}
+	return 0;
+
 
 }
 
-
-
-
+	
 /*send json data by libcurl*/
+#if 0
 void send_report(char *jsonObj){
 
   CURL *curl;
@@ -241,21 +371,28 @@ void send_report(char *jsonObj){
     curl_easy_cleanup(curl);
     curl_global_cleanup();
     return res;
+} 
+#endif
 
-}
+
+/*
 int main(void) {
-	unsigned char t[2] = { 0x00, 0x44};
-	char a[20];
-	//float temp = 0.0;
-
-    int ret = 0;
-   
-  
 	
-	 cJSON *json = cJSON_CreateObject();
-     ret = json_obj_error(t, json);
+     t_mod_ret ret;
+     printf(" start test\n");
+     memset(&ret, 0, sizeof(t_mod_ret));
+     ret.cmd_id = 0x01;
+     ret.dev_id = 0x01;
+     ret.cmd = 13;
+     ret.param[0] = 0xFF;
+     ret.param[1] = 0x00;
+     
+    cJSON* root = create_json(&ret);
 
-    char* buf = cJSON_Print(json);
-    printf("%s", buf);
+    if (root != NULL) {
+     	char* buf = cJSON_Print(root);
+     printf("%s", buf);
 
-}
+    }
+
+} */

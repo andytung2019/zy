@@ -2,13 +2,12 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<string.h>
-//#include<pthread.h>
-//#include<semaphore.h>
 
 #include "queue_r.h"
 
-
-t_ret_q* init_queue(void) {
+//t_ret_q *q = NULL; 测试用队列全局变量
+ //创建环形队列
+t_ret_q* init_rqueue(void) {
 	t_ret_q *q = NULL;
 	q = (t_ret_q *)malloc(sizeof(t_ret_q));
 
@@ -23,37 +22,43 @@ t_ret_q* init_queue(void) {
 	q->tail = 0;
 	
 	pthread_mutex_init(&q->mutex, NULL);
-		return q;
+	//sem_init(&q->full, 0, 0);
+	//sem_init(&q->empty, 0, MAX_RET_NUM);
+	return q;
 }
 
-int en_queue(t_ret_cmd *q, t_ret_cmd *p_cmd) {
-	t_ret_cmd *p;
+//进入队列操作
+int en_rqueue(t_ret_q *q, t_mod_ret *p_cmd) {
+	t_mod_ret *p;
 	if(NULL == q || NULL == p_cmd) {
 		return -1;
 	}
 
-	if(q->len >= MAX_CMD_NUM ){
+	if(q->len >= MAX_RET_NUM ){
 		return -2;
 	}
 //	sem_wait(&q->empty);
 	pthread_mutex_lock(&q->mutex);
 		
-	p = &(q->cmd_list[q->tail]);
-	memset(p, 0, sizeof(t_ret_cmd));	
-	memcpy((t_u8*)p, (t_u8*)p_cmd, sizeof(t_ret_cmd));
-	q->tail = (q->tail + 1) % MAX_CMD_NUM;
+	p = &(q->ret_list[q->tail]);
+	memset(p, 0, sizeof(t_mod_ret));	
+	memcpy((t_u8*)p, (t_u8*)p_cmd, sizeof(t_mod_ret));
+	q->tail = (q->tail + 1) % MAX_RET_NUM;
 	q->len += 1;
 	
 	pthread_mutex_unlock(&q->mutex);
 //	sem_post(&q->full);
+	printf("rq: %p, head:%d, tail:%d\n", q,q->head, q->tail);	
+
 	return q->len;
 
 }	
 
-//only one thread can de queue
-int de_queue(t_cmd_q *q, t_ret_cmd *pcmd) {
+//出队列操作
+//注意，仅允许一个线程进行出队列操作
+int de_rqueue(t_ret_q *q, t_mod_ret *pret) {
 
-	if(NULL == q || NULL == pcmd) {
+	if(NULL == q || NULL == pret) {
 		return -1;
 	}
 
@@ -61,13 +66,15 @@ int de_queue(t_cmd_q *q, t_ret_cmd *pcmd) {
 	if(q->len <= 0 ) {
 		return 0;
 	}
+
 //	sem_wait(&q->full);
 	pthread_mutex_lock(&q->mutex);
-	memcpy((t_u8*)pcmd,(t_u8*)&q->ret_list[q->head], sizeof(t_ret_cmd));
-	t_ret_cmd *p = &(q->ret_list[q->head]);
+	memcpy((t_u8*)pret,(t_u8*)&q->ret_list[q->head], sizeof(t_mod_ret));
+	t_mod_ret *p = &(q->ret_list[q->head]);
 	
-	q->head = (q->head + 1) % MAX_CMD_NUM;
+	q->head = (q->head + 1) % MAX_RET_NUM;
 	q->len -= 1;
+	
 	pthread_mutex_unlock(&q->mutex);
 //	sem_post(&q->empty);
     return 1 ;	
@@ -75,14 +82,15 @@ int de_queue(t_cmd_q *q, t_ret_cmd *pcmd) {
 
 }
 
-int reset_queue(t_cmd_q *q) {
+//重置环形队列,指针从0开始，清空所有内容
+int reset_rqueue(t_ret_q *q) {
 	if( NULL == q) {
 		return -1;
 	}
 
 	if (NULL != q){
 	    
-		memset(q, 0, sizeof(t_cmd_q));
+		memset(q, 0, sizeof(t_ret_q));
 		q->len = 0;
 		q->head = 0;
 		q->tail = 0;
@@ -92,7 +100,8 @@ int reset_queue(t_cmd_q *q) {
 	
 }
 
-int queue_is_empty(t_cmd_q *q) {
+//判断队列是不是空
+int rqueue_is_empty(t_ret_q *q) {
 
 	if( NULL == q) {
 		return 0;
@@ -105,19 +114,21 @@ int queue_is_empty(t_cmd_q *q) {
 	return 0;
 }
 
-int q_is_full(t_cmd_q *q) {
+//判断队列是不是满
+int rqueue_is_full(t_ret_q *q) {
 	if(NULL == q) {
 		return 0;
 	}
 
-	if(q->len == MAX_CMD_NUM) {
+	if(q->len == MAX_RET_NUM) {
 
 		return 1;
 	}
 	return 0;
 }
 
-int len_queue(t_cmd_q *q) {
+//队列长度
+int len_rqueue(t_ret_q *q) {
 	if(NULL == q ) {
 		return -1;
 	}
@@ -125,11 +136,12 @@ int len_queue(t_cmd_q *q) {
 	return q->len;
 }
 
-int free_queue(t_cmd_q *q){
+//释放队列
+int free_rqueue(t_ret_q *q){
 	if( NULL == q) {
 		return -1;
 	}
-	memset(q, 0, sizeof(t_cmd_q));
+	memset(q, 0, sizeof(t_ret_q));
 	free(q);
 	
 	pthread_mutex_destroy(&q->mutex);
@@ -151,7 +163,7 @@ int free_queue(t_cmd_q *q){
 
 
 /* ...............test code ................*/
-void print_queue(t_cmd_q *q) {
+void print_rqueue(t_ret_q *q) {
      if(NULL == q) {
       printf(" null queue !\n");
      } 
@@ -159,14 +171,14 @@ void print_queue(t_cmd_q *q) {
      printf("queue:%p; size:%d, head:%d, tail:%d\n", q, q->len, q->head, q->tail);
 }
 
-void print_list(t_cmd_q *q) {
+void print_rlist(t_ret_q *q) {
 
 	if (NULL == q) {
 		printf(" null queue \n");
 	
 	}
 	for(int i = 0; i < 48; i++ ) {
-		t_ret_cmd *p = &(q-ret_list[i]);
+		t_mod_ret *p = &(q->ret_list[i]);
 		printf(" %02x ", p->cmd_id);
 	}
 	printf("\n");
@@ -174,12 +186,12 @@ void print_list(t_cmd_q *q) {
 
 /*
 int main(void) {
-	t_cmd_q *q = NULL;
+	t_ret_q *q = NULL;
 	q = init_queue();
 	printf("start queue: %p\n",q);
 
         print_queue(q);
-	t_ret_cmd cmd;
+	t_mod_ret cmd;
 	int ret;
 	ret = en_queue(q, &cmd);
 	print_queue(q);
@@ -194,8 +206,8 @@ int main(void) {
 
 #if 0  
 void* en_q2(void *arg) {
-	t_ret_cmd cmd;
-	memset(&cmd, 0, sizeof(t_ret_cmd));	
+	t_mod_ret cmd;
+	memset(&cmd, 0, sizeof(t_mod_ret));	
 	while(1) {
 
 		printf(" en queue2  thread>>>>>>");
@@ -210,8 +222,8 @@ void* en_q2(void *arg) {
 
 
 void* en_q(void *arg) {
-	t_ret_cmd cmd;
-	memset(&cmd, 0, sizeof(t_ret_cmd));	
+	t_mod_ret cmd;
+	memset(&cmd, 0, sizeof(t_mod_ret));	
 	while(1) {
 
 		printf(" en queue  thread-----");
@@ -224,8 +236,8 @@ void* en_q(void *arg) {
 }
 
 void* de_q(void *arg) {
-	t_ret_cmd cmd;
-	memset(&cmd, 0, sizeof(t_ret_cmd));
+	t_mod_ret cmd;
+	memset(&cmd, 0, sizeof(t_mod_ret));
 	while(1) {
 
 		printf(" de queue  thread.... ");
@@ -248,7 +260,7 @@ int main(void) {
 	printf("start queue: %p\n",q);
 
         print_queue(q);
-	t_ret_cmd cmd;
+	t_mod_ret cmd;
 	
 	int ret1, ret2, ret3;
 	ret1 = pthread_create(&de_th, NULL, de_q, NULL);
