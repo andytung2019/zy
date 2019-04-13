@@ -38,7 +38,7 @@ int open_modbus(int id, modbus_t **ret_mb ) {
 	response_timeout.tv_sec = 5;
 	response_timeout.tv_usec = 0;
 	
-	mb= modbus_new_rtu("/dev/ttyUSB0", 9600, 'N', 8, 1);
+	mb= modbus_new_rtu("/dev/ttyS0", 9600, 'N', 8, 1);
 	if(NULL == mb) {
 		printf("open dev ttyUSB0 failed\n");
 		return -1;

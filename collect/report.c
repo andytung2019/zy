@@ -8,7 +8,8 @@
 #include "queue_r.h"
 
 #define CHARS_LEN 30
-#define STATION_ID 20001
+#define STATION_ID "20001"
+#define POSTURL "http://120.77.168.74/phpweb/htprt.php"
 
 char *item[] = { "power","timer", "set_temp","set_humid",
 		"env_tempe", "env_humid", "onload", "error", 
@@ -175,7 +176,9 @@ cJSON* create_json_all( t_mod_ret *pret ){
 
 	char name[CHARS_LEN];
 	char out[CHARS_LEN];
-	
+	time_t t;
+	int time_d;
+
 	if ( NULL  == pret) {
 		return NULL;
 	}
@@ -183,6 +186,15 @@ cJSON* create_json_all( t_mod_ret *pret ){
 	cJSON *root= cJSON_CreateObject();
 	cJSON *json_onload;// = cJSON_CreateObject();
 	cJSON *json_error; //= cJSON_CreateObject();
+
+	//station_id:
+
+	cJSON_AddStringToObject(root,"station_id", STATION_ID);
+     //time
+	time_d = time(&t);
+	memset(out, 0, CHARS_LEN);
+	sprintf(out, "%d", time_d);
+	cJSON_AddStringToObject(root,"timestamp", out);
 
 	//0-1 power
 	memset(out, 0, CHARS_LEN);
@@ -234,9 +246,8 @@ cJSON* create_json_all( t_mod_ret *pret ){
 
 	//14-15 error
    	cJSON_AddItemToObject(root,"error",json_error=cJSON_CreateObject() );
-	printf(" %02x , %02x \n", pret->param[15], pret->param[14]);
+	//printf(" %02x , %02x \n", pret->param[15], pret->param[14]);
      	unsigned  short  err = (unsigned short)(pret->param[14])<<8 + (unsigned short)(pret->param[15]);
-	printf("%04x ", err);
 	for(int i = 0; i < 16; i++) {
           cJSON_AddStringToObject(json_error,bit[i], bools[err&0x0001]);
           err =err >> 1;
@@ -268,8 +279,8 @@ cJSON* create_json_all( t_mod_ret *pret ){
 	strcpy(name, "tempe_4");
 	cJSON_AddStringToObject(root,name, out);
 
-	printf("%s\n", cJSON_Print(root));
-	return NULL ;
+//	printf("%s\n", cJSON_Print(root));
+	return root;
 }
 
 #if 0
@@ -314,6 +325,7 @@ cJSON* create_json_all( t_mod_ret *pret ){
 #endif 
 
 int send_report(t_mod_ret *pret){
+	int ret;
 	if(pret == NULL) {
 		return -1;
 	}
@@ -321,7 +333,11 @@ int send_report(t_mod_ret *pret){
 	cJSON *json =  create_json_all(pret);
 	if (json != NULL) {
      		char* buf = cJSON_Print(json);
-       		printf("%s", buf);
+     
+      		printf("%s\n", buf);
+			ret = send_json(buf);
+			printf("send json ret:d\n", ret);
+		    cJSON_free(json);	
 	}
 	return 0;
 
@@ -330,8 +346,7 @@ int send_report(t_mod_ret *pret){
 
 	
 /*send json data by libcurl*/
-#if 0
-void send_report(char *jsonObj){
+void send_json(char *jsonObj){
 
   CURL *curl;
     CURLcode res;
@@ -339,7 +354,7 @@ void send_report(char *jsonObj){
     curl_global_init(CURL_GLOBAL_ALL);
     curl = curl_easy_init();
     if (curl == NULL) {
-        return 128;
+        return -10;
     }
 
     struct curl_slist *headers = NULL;
@@ -347,32 +362,20 @@ void send_report(char *jsonObj){
     headers = curl_slist_append(headers, "Content-Type: application/json");
     headers = curl_slist_append(headers, "charsets: utf-8");
 
-    /*curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_URL, POSTURL);
 
-    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers); 
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonObj);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcrp/0.1");
 
-
-       res = curl_easy_perform(curl);
-*/
-    curl_easy_setopt(curl, CURLOPT_URL, "http://http2bin.org/put");
-
-    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonObj);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcrp/0.1");
 
     res = curl_easy_perform(curl);
 
     curl_easy_cleanup(curl);
     curl_global_cleanup();
+
     return res;
 } 
-#endif
 
 
 /*

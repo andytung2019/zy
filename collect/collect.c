@@ -8,7 +8,8 @@
 #include "queue_r.h"
 
 //#define REPORT_TIME (15*60) //every 15minutes  report
-#define REPORT_TIME (2) //every 2s  report only for test
+#define REPORT_TIME (30) //every 2s  report only for test
+#define GET_SERV_TIME (20)
 #define TIMER_CMD_START 0xff000000
 #define TIMER_CMD_MAX 65535
 t_cmd_q *q = NULL;
@@ -69,7 +70,7 @@ void* server_cmd(void *arg) {
      	} else {
 			printf(" parse server command error :%d\n", ret2);
 		}	
-		sleep(1);
+		sleep(GET_SERV_TIME);
 	//print_queue(q);
 	}	
 }

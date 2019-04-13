@@ -1,8 +1,8 @@
 
 #include <modbus/modbus.h>
 #define ALL_REG_NUM  12
-/*#define START_REG_ADDR 0xFC00 */
-#define START_REG_ADDR 40000 /*for modbus test*/
+#define START_REG_ADDR 0xFC00 
+/*#define START_REG_ADDR 40000*/ /*for modbus test*/
 
 int open_modbus(int id, modbus_t **ret_mb ); 
 
