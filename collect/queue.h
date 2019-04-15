@@ -10,7 +10,7 @@ typedef struct {
 	t_u32 cmd_id;
 	t_u32 dev_id;
 	t_u8 cmd;
-	t_u32 param; //操作参数，如设定温度命令中的温度值
+	t_i32 param; //操作参数，如设定温度命令中的温度值
 } t_modcmd;
 
 //环形队列结构体，要求多线程操作安全

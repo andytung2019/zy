@@ -9,15 +9,19 @@
 
 int parse_json_cmd(char *p_data, t_modcmd *pcmd){
     
-	int cmd_type = 0;
-	int dev_id = 0;
-	int cmd_id = 0;
-	int param = 0;
+	char cmd_type[32];
+	char dev_id[32];
+	char cmd_id[32];
+	char param[32];
+    memset(cmd_type, 0, 32);
+    memset(dev_id, 0, 32);
+    memset(cmd_id, 0, 32);
+    memset(param, 0, 32);
 
     if(NULL == p_data || NULL == pcmd) {
         return -1;
     }
-	
+
     cJSON *root = NULL;
     cJSON *item = NULL;
 	root = cJSON_Parse(p_data);
@@ -31,34 +35,34 @@ int parse_json_cmd(char *p_data, t_modcmd *pcmd){
          printf("server command has no cmd_id\n");
          return -2;
     }
-    cmd_id = item->valueint;
+    strcpy(cmd_id,item->valuestring);
 
     item = cJSON_GetObjectItem(root, "device_id");
     if( NULL == item) {
          printf("server command has no device_id\n");
-         return -2;
+         return -3;
     }
-    dev_id = item->valueint;
+    strcpy(dev_id ,item->valuestring);
 
-    item = cJSON_GetObjectItem(root, "contorl_type_id");
+    item = cJSON_GetObjectItem(root, "control_type_id");
     if( NULL == item) {
          printf("server command has no control type_id\n");
-         return -2;
+         return -4;
     }
-    cmd_type = item->valueint;
+    strcpy(cmd_type,item->valuestring);
 
-    item = cJSON_GetObjectItem(root, "contorl_code");
+    item = cJSON_GetObjectItem(root, "control_code");
     if( NULL == item) {
          printf("server command has no control code\n");
-         return -2;
+         return -5;
     }
-    param = item->valueint;
+    strcpy(param,item->valuestring);
 	
 	// set modbus cmd
-	pcmd->cmd_id = cmd_id; 
-	pcmd->dev_id = dev_id;
-   	pcmd->param = (unsigned int)param;
-
+	pcmd->cmd_id = atoi(cmd_id); 
+	pcmd->dev_id = atoi(dev_id);
+   	pcmd->param =(int)atof(param)*10;
+	printf(" cmd:%d, dev:%d, param:%d\n", pcmd->cmd_id,pcmd->dev_id,pcmd->param);
 	return 0;
 }
 

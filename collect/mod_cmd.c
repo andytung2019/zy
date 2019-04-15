@@ -56,7 +56,7 @@ int write_register(modbus_t *mb, unsigned int addr, unsigned int value ){
 	
 	rc = modbus_write_register(mb, addr,value);
 	if(rc < 0 ){
-		printf(" read register error\n");
+		printf(" write register error\n");
 		modbus_strerror(errno);
 	}
 	return rc;
@@ -246,7 +246,7 @@ int run_set_cmd(t_modcmd *pcmd, t_mod_ret *pret){
 	
 	int num = 1;
 	unsigned int addr = START_REG_ADDR + pcmd->cmd -1;
-	unsigned int value = pcmd->param;
+	int value = pcmd->param;
 
 	ret = write_register(mb, addr, value);
 	if(ret < 0 ) {

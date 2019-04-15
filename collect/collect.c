@@ -43,10 +43,10 @@ void* timer_cmd(void *arg) {
 	}	
 }
 
-
-
 void* server_cmd(void *arg) {
-	char *cmd_url="http://149.28.67.234:8080/ZyTest/send";
+	//char *cmd_url="http://149.28.67.234:8080/ZyTest/send";
+	char *cmd_url = "http://120.77.168.74/phpweb/htpst.php?station=20001";
+
 	int ret, ret1,ret2 ;
 	char buf[1024];
 	t_modcmd cmd;

@@ -8,7 +8,6 @@
 #include "queue_r.h"
 
 #define CHARS_LEN 30
-#define STATION_ID "20001"
 #define POSTURL "http://120.77.168.74/phpweb/htprt.php"
 
 char *item[] = { "power","timer", "set_temp","set_humid",
@@ -187,13 +186,15 @@ cJSON* create_json_all( t_mod_ret *pret ){
 	cJSON *json_onload;// = cJSON_CreateObject();
 	cJSON *json_error; //= cJSON_CreateObject();
 
-	//station_id:
+	//device_id:
 
-	cJSON_AddStringToObject(root,"station_id", STATION_ID);
+	memset(out, 0, CHARS_LEN);
+	sprintf(out, "%u", pret->dev_id);
+	cJSON_AddStringToObject(root,"device_id", out);
      //time
 	time_d = time(&t);
 	memset(out, 0, CHARS_LEN);
-	sprintf(out, "%d", time_d);
+	sprintf(out, "%u", time_d);
 	cJSON_AddStringToObject(root,"timestamp", out);
 
 	//0-1 power
