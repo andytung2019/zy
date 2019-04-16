@@ -9,6 +9,7 @@
 
 #define CHARS_LEN 30
 #define POSTURL "http://120.77.168.74/phpweb/htprt.php"
+#define RET_URL "http://120.77.168.74/phpweb/htpstr.php"
 
 char *item[] = { "power","timer", "set_temp","set_humid",
 		"env_tempe", "env_humid", "onload", "error", 
@@ -27,6 +28,8 @@ int json_item_power(unsigned char *ptr, char* json_name,  char *json_value) {
     }
     
     strcpy(json_name, "power");
+   //defualt 0, if the device is poweroff, may read nothing
+    strcpy(json_value, "0");
     
     if ((*ptr == 0x00) && (*(ptr+1) == 0xff)) {
         strcpy(json_value, "1");
@@ -37,7 +40,6 @@ int json_item_power(unsigned char *ptr, char* json_name,  char *json_value) {
         strcpy(json_value, "0");
         return 0;
     } 
-
 
     return -2;
 }
@@ -284,46 +286,8 @@ cJSON* create_json_all( t_mod_ret *pret ){
 	return root;
 }
 
-#if 0
-cJSON* create_json_all( t_mod_ret *pret ){  
-    
-    int len = 0;
-    printf(" create json,  param :\n");
-    {
-	    for (int i = 0; i < 24; i++) {
-	    	printf(" %02x ", pret->param[i]);
-	    }
-    }
-    len  = pret->param[2];
-    if( len != 24) {
-    	return -1;
-    }
-    
-    int ret = 0;
-    char json_name[CHARS_LEN];
-    char json_value[CHARS_LEN];
 
-    cJSON* jsonroot = NULL;
-    
-    if(NULL == pret) {
-        return NULL;
-    }
-    jsonroot = cJSON_CreateObject();
-    if( NULL == jsonroot ) {
-        return NULL;
-    }
 
-       
-    memset(json_name, 0, CHARS_LEN);
-    memset(json_value, 0, CHARS_LEN);
-    ret = json_item_power(&pret->param[3], json_name, json_value); 
-    cJSON_AddStringToObject(jsonroot, json_name, json_value);
-   
- 
-    return jsonroot;
-}
-
-#endif 
 
 int send_report(t_mod_ret *pret){
 	int ret;
@@ -336,8 +300,62 @@ int send_report(t_mod_ret *pret){
      		char* buf = cJSON_Print(json);
      
       		printf("%s\n", buf);
-			ret = send_json(buf);
+			ret = send_json(buf, POSTURL);
 			printf("send json ret:d\n", ret);
+		    cJSON_free(json);	
+	}
+	return 0;
+
+
+}
+
+
+
+
+cJSON* create_json_ret( t_modcmd *pcmd ){  
+#define  CHARS_LEN 24
+
+	char name[CHARS_LEN];
+	char out[CHARS_LEN];
+	time_t t;
+	int time_d;
+
+	if ( NULL  == pcmd) {
+		return NULL;
+	}
+	
+	cJSON *root= cJSON_CreateObject();
+
+	//device_id:
+	memset(out, 0, CHARS_LEN);
+	sprintf(out, "%u", pcmd->dev_id);
+	cJSON_AddStringToObject(root,"device_id", out);
+    
+   	memset(out, 0, CHARS_LEN);
+	sprintf(out, "%u", pcmd->cmd_id);
+	cJSON_AddStringToObject(root,"cmd_id", out);
+  
+  	memset(out, 0, CHARS_LEN);
+	sprintf(out, "%u", 0);	//send return 0k
+	cJSON_AddStringToObject(root,"return_code", out);
+   
+   return root; 
+}
+
+
+int send_ret(t_modcmd *pcmd){
+	int ret;
+	if(pcmd == NULL) {
+		return -1;
+	}
+
+	cJSON *json =  create_json_ret(pcmd);
+	if (json != NULL) {
+     		char* buf = cJSON_Print(json);
+     
+      		printf("%s\n", buf);
+			ret = send_json(buf,RET_URL);
+			printf("send json to server ret:d\n", ret);
 		    cJSON_free(json);	
 	}
 	return 0;
@@ -347,12 +365,12 @@ int send_report(t_mod_ret *pret){
 
 	
 /*send json data by libcurl*/
-void send_json(char *jsonObj){
+void send_json(char *jsonObj, char *posturl){
 
   CURL *curl;
     CURLcode res;
 
-    curl_global_init(CURL_GLOBAL_ALL);
+   // curl_global_init(CURL_GLOBAL_ALL);
     curl = curl_easy_init();
     if (curl == NULL) {
         return -10;
@@ -363,7 +381,7 @@ void send_json(char *jsonObj){
     headers = curl_slist_append(headers, "Content-Type: application/json");
     headers = curl_slist_append(headers, "charsets: utf-8");
 
-    curl_easy_setopt(curl, CURLOPT_URL, POSTURL);
+    curl_easy_setopt(curl, CURLOPT_URL, posturl);
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers); 
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonObj);

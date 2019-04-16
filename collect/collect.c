@@ -3,6 +3,7 @@
 #include<pthread.h>
 #include<string.h>
 #include<time.h>
+#include <curl/curl.h>
 
 #include "queue.h"
 #include "queue_r.h"
@@ -78,7 +79,7 @@ void* server_cmd(void *arg) {
 void* read_cmd(void *arg) {
 	int rt;
 	int rt_cmd;
-
+	int rt_serv;
     	t_modcmd cmd;
 	t_mod_ret ret;
 
@@ -92,6 +93,9 @@ void* read_cmd(void *arg) {
 		}
 		else {
 			printf("de queue cmd:%04x \n", cmd.cmd_id);
+		
+			//cmd come from server, send return to server 
+	//		rt_serv = send_ret(&cmd);		
 			
 			//run the cmd , and get return
 			rt_cmd = run_cmd(&cmd, &ret);
@@ -146,6 +150,8 @@ int main(void) {
     	pthread_t th_read_cmd; 
         pthread_t th_report;	
 
+	//init curl 
+	curl_global_init(CURL_GLOBAL_ALL);
 	q = init_queue();
 	printf("start queue: %p\n",q);
 	rq = init_rqueue();

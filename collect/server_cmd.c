@@ -61,8 +61,11 @@ int parse_json_cmd(char *p_data, t_modcmd *pcmd){
 	// set modbus cmd
 	pcmd->cmd_id = atoi(cmd_id); 
 	pcmd->dev_id = atoi(dev_id);
+	pcmd->cmd= atoi(cmd_type);
    	pcmd->param =(int)atof(param)*10;
-	printf(" cmd:%d, dev:%d, param:%d\n", pcmd->cmd_id,pcmd->dev_id,pcmd->param);
+	pcmd->isServ = 1;
+	printf(" cmd:%d, dev:%d,cmd:%d param:%d, isServ:%d\n",
+			 pcmd->cmd_id,pcmd->dev_id,pcmd->cmd,pcmd->param, pcmd->isServ);
 	return 0;
 }
 
@@ -89,7 +92,7 @@ int get_url(char *url_str, char *out) {
 	}
 	CURL *curl = NULL;
 
-	curl_global_init(CURL_GLOBAL_ALL);
+//	curl_global_init(CURL_GLOBAL_ALL);
 	curl = curl_easy_init();
 	
 	if(NULL == curl) {

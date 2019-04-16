@@ -175,6 +175,12 @@ int run_query_cmd(t_modcmd *pcmd, t_mod_ret *pret){
 	unsigned short a[12];
 	modbus_t *mb;
 
+	if(NULL == pcmd || NULL==pret ) {
+		printf(" pcmd null or pret null!\n");
+		return -2;
+	}
+	pret->cmd_id = pcmd->cmd_id;
+	pret->dev_id = pcmd->dev_id;
 
 	memset((unsigned char*)a, 0, 24);
 
