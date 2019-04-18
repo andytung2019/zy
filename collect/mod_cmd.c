@@ -239,7 +239,7 @@ int run_set_cmd(t_modcmd *pcmd, t_mod_ret *pret){
 	int ret = 0;
 	unsigned short a[12];
 	modbus_t *mb;
-
+	unsigned int uvalue = 0x00;
 
 	memset((char*)a, 0, 24);
 
@@ -253,8 +253,42 @@ int run_set_cmd(t_modcmd *pcmd, t_mod_ret *pret){
 	int num = 1;
 	unsigned int addr = START_REG_ADDR + pcmd->cmd -1;
 	int value = pcmd->param;
+	
+	//power 
+	if (pcmd->cmd==1) {
+		if(value == 1) {
+			uvalue = 0xff00;			
+		}
+		else if(value == 0) {
+			uvalue = 0x00ff;
+		}
+		
+	}
 
-	ret = write_register(mb, addr, value);
+	//tempe
+	if(pcmd->cmd == 2) {
+		if( value < 10) {
+			value = 10;
+		}
+		if (value > 65) {
+			value = 65;
+		}
+		uvalue = (unsigned int)value*10;
+	}
+
+	//humid
+	if(pcmd->cmd == 3) {
+		if( value < 10) {
+			value = 10;
+		}
+		if (value > 99) {
+			value = 99;
+		}
+		uvalue = (unsigned int)value*10;
+	}
+
+
+	ret = write_register(mb, addr, uvalue);
 	if(ret < 0 ) {
 		printf(" set mb command error\n");
 	}
