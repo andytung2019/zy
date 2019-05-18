@@ -8,8 +8,8 @@
 #include "queue_r.h"
 
 #define CHARS_LEN 30
-#define POSTURL "http://120.77.168.74/phpweb/htprt.php"
-#define RET_URL "http://120.77.168.74/phpweb/htpstr.php"
+#define POSTURL "http://132.232.25.130:8080/station/report"
+#define RET_URL  "http://132.232.25.130:8080/station/cmdret"
 
 char *item[] = { "power","timer", "set_temp","set_humid",
 		"env_tempe", "env_humid", "onload", "error", 
@@ -172,7 +172,7 @@ int json_item__tempe_A2D(unsigned char* ptr, char *json_name, char *json_value) 
      return 0;
 }
 
-cJSON* create_json_all( t_mod_ret *pret ){  
+cJSON* create_json_all( t_mod_ret *pret){  
 #define  CHARS_LEN 24
 
 	char name[CHARS_LEN];
@@ -189,10 +189,15 @@ cJSON* create_json_all( t_mod_ret *pret ){
 	cJSON *json_error; //= cJSON_CreateObject();
 
 	//device_id:
+	memset(out, 0, CHARS_LEN);
+	cJSON_AddStringToObject(root,"device_id", out);
+
+
+	//position_id:
 
 	memset(out, 0, CHARS_LEN);
 	sprintf(out, "%u", pret->dev_id);
-	cJSON_AddStringToObject(root,"device_id", out);
+	cJSON_AddStringToObject(root,"position_id", out);
      //time
 	time_d = time(&t);
 	memset(out, 0, CHARS_LEN);
@@ -238,23 +243,34 @@ cJSON* create_json_all( t_mod_ret *pret ){
 	cJSON_AddStringToObject(root,name, out);
 	
 	//12-13 onload
-    	cJSON_AddItemToObject(root,"onload",json_onload=cJSON_CreateObject() );
+/*    	cJSON_AddItemToObject(root,"onload",json_onload=cJSON_CreateObject() );
         int load = pret->param[13];
         printf("%d , %s,  %s \n", load, bools[0], bools[1]);	
 	for(int i = 0; i < 8; i++) {
           cJSON_AddStringToObject(json_onload,bit[i], bools[load&0x01]);
           load = load >> 1;
        }
+*/
+	memset(out, 0, CHARS_LEN);
+	sprintf(out, "%u", pret->param[13]);
+	cJSON_AddStringToObject(root,"onload", out);
 
 
 	//14-15 error
-   	cJSON_AddItemToObject(root,"error",json_error=cJSON_CreateObject() );
+   /*	cJSON_AddItemToObject(root,"error",json_error=cJSON_CreateObject() );
 	//printf(" %02x , %02x \n", pret->param[15], pret->param[14]);
      	unsigned  short  err = (unsigned short)(pret->param[14])<<8 + (unsigned short)(pret->param[15]);
 	for(int i = 0; i < 16; i++) {
           cJSON_AddStringToObject(json_error,bit[i], bools[err&0x0001]);
           err =err >> 1;
        }
+*/	memset(out, 0, CHARS_LEN);
+	sprintf(out, "%u", pret->param[14]);
+	cJSON_AddStringToObject(root,"error_0", out);
+	memset(out, 0, CHARS_LEN);
+	sprintf(out, "%u", pret->param[15]);
+	cJSON_AddStringToObject(root,"error_1", out);
+
 
 
 	//16-23

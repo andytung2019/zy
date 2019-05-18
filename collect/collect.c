@@ -7,17 +7,25 @@
 
 #include "queue.h"
 #include "queue_r.h"
+#include "collect.h"
 
 //#define REPORT_TIME (15*60) //every 15minutes  report
 #define REPORT_TIME (30) //every 2s  report only for test
 #define GET_SERV_TIME (20)
 #define TIMER_CMD_START 0xff000000
 #define TIMER_CMD_MAX 65535
+
+//very important!! station_id is the only id for 1 station and 1 collector
+int station_id = 10001;
+//very import! get device list for the current station
+
+
 t_cmd_q *q = NULL;
 t_ret_q *rq = NULL;
 
 t_u32 timer_cmd_id = 0;
 
+DEV_LIST  dev_list;
 
 
 void* timer_cmd(void *arg) {
@@ -133,7 +141,7 @@ void* report(void *arg) {
 		}
 		else {
 			printf("rqueue de ............\n");
-			send_report(&ret);
+			send_report(&ret, station_id);
 		}
 		sleep(1);
 		
@@ -141,7 +149,13 @@ void* report(void *arg) {
 }
 
 
-
+int get_dev_list(int station_id){
+ char *url="http://132.232.25.130:8080/station/getdev?station=10001";
+ DEV_LIST dev_list;
+ dev_list.dev[0].device_id=2;
+ dev_list.dev[0].position_id = 2; 
+ dev_list.num = 1; 
+}
 
 int main(void) {
 	printf("start test queue \n");
