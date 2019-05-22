@@ -75,7 +75,7 @@ int open_modbus(int id, modbus_t **ret_mb ) {
 	response_timeout.tv_sec = 3;
 	response_timeout.tv_usec = 0;
 	
-	mb= modbus_new_rtu("/dev/ttyS0", 9600, 'N', 8, 1);
+	mb= modbus_new_rtu("/dev/ttyUSB0", 9600, 'N', 8, 1);
 	if(NULL == mb) {
 		printf("open dev ttyUSB0 failed\n");
 		return -1;
@@ -86,7 +86,7 @@ int open_modbus(int id, modbus_t **ret_mb ) {
 		
 	modbus_set_debug(mb, TRUE);
 
-    rc = modbus_set_slave(mb, 1);
+    rc = modbus_set_slave(mb, id);
 	if(rc != 0) {
 		printf(" modbus set slave error\n");
 		return -2;
@@ -186,7 +186,7 @@ int run_query_cmd(t_modcmd *pcmd, t_mod_ret *pret){
 
 
 	//open serial port
-    	ret = open_modbus(1, &mb);
+    ret = open_modbus(pcmd->dev_id, &mb);
 	if(ret < 0 ) {
 		printf(" open mod bus error :%d\n", ret);	
 		return -1;
@@ -244,7 +244,7 @@ int run_set_cmd(t_modcmd *pcmd, t_mod_ret *pret){
 	memset((char*)a, 0, 24);
 
 	//open serial port
-        ret = open_modbus(1, &mb);
+        ret = open_modbus(pcmd->dev_id, &mb);
 	if(ret < 0 ) {
 		printf(" open mod bus error :%d\n", ret);	
 		return -1;

@@ -6,6 +6,7 @@ CFLAGS := -Wall -O2
 LIB = -lpthread -lcurl -lmodbus
 OBJS = collect.o\
        report.o\
+       get_device.o\
        queue.o\
        queue_r.o\
 	   server_cmd.o\

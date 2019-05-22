@@ -194,7 +194,6 @@ cJSON* create_json_all( t_mod_ret *pret){
 
 
 	//position_id:
-
 	memset(out, 0, CHARS_LEN);
 	sprintf(out, "%u", pret->dev_id);
 	cJSON_AddStringToObject(root,"position_id", out);
