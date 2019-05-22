@@ -12,3 +12,5 @@ typedef struct dev_l{
 
 int get_dev_list(DEV_LIST *p_dev_list, int station_id);
 
+int get_position(DEV_LIST *p_dev_list, int dev_id);
+int get_device_id(DEV_LIST *p_dev_list, int position_id);

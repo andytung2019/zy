@@ -6,6 +6,7 @@
 #include "cJSON.h"
 #include "queue.h"
 #include "queue_r.h"
+#include "get_device.h"
 
 #define CHARS_LEN 30
 #define POSTURL "http://132.232.25.130:8080/station/report"
@@ -21,6 +22,7 @@ char *bit[] = { "Bit0", "Bit1", "Bit2", "Bit3", "Bit4",
 
 char *bools[] = {"0", "1"};
 
+extern  DEV_LIST  dev_list;
 
 int json_item_power(unsigned char *ptr, char* json_name,  char *json_value) {
     if(NULL == ptr || NULL == json_value) {
@@ -190,6 +192,8 @@ cJSON* create_json_all( t_mod_ret *pret){
 
 	//device_id:
 	memset(out, 0, CHARS_LEN);
+	int dev_id =  get_device_id(&dev_list, pret->dev_id);
+	sprintf(out, "%u", dev_id);
 	cJSON_AddStringToObject(root,"device_id", out);
 
 

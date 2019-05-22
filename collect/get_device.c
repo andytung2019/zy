@@ -58,7 +58,6 @@ if( NULL == p_dev_list ) {
  p_dev_list->dev[0].position_id = 3; 
  p_dev_list->dev[1].device_id = 202;
  p_dev_list->dev[1].position_id=4;
- dev_list.num = 2;
-
- return dev_list.num; 
+ p_dev_list->num = 2;
+ return p_dev_list->num; 
 }

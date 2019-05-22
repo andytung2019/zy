@@ -32,26 +32,31 @@ void* timer_cmd(void *arg) {
 	int ret;
 	t_modcmd cmd;
 
+    	printf(" dev_list.num: %d\n", dev_list.num); 
  	if( dev_list.num > 0) {
-    while(1) {
-  		for( int id = 0; id < dev_list.num; id++ ) {
+    
+	  while(1) {
+  		for( int i = 0; i < dev_list.num; i++ ) {
 				memset(&cmd, 0, sizeof(t_modcmd));		
-				cmd.dev_id = dev_list.dev[id].position_id; //this position id is modbus id in fact;
+				cmd.dev_id = dev_list.dev[i].position_id; //this position id is modbus id in fact;
 				cmd.cmd = 13;
 
 				timer_cmd_id = (timer_cmd_id + 1) % TIMER_CMD_MAX;
 				cmd.cmd_id = TIMER_CMD_START + timer_cmd_id;
-	
+			
+    				printf(" cmd: %d\n", cmd.cmd_id); 
+			
 				ret = en_queue(q, &cmd);
-		  	if (ret < 0) {
+		  		if (ret < 0) {
 					printf("add cmd:%04x to queue error !\n", cmd.cmd_id);			
 			 	} else{
 						printf("add cmd:%04x to queue ok !\n", cmd.cmd_id);			
 				}
 			}
-			sleep(REPORT_TIME);
-		}	
-	}
+	
+		sleep(REPORT_TIME);
+	 }	
+     }
 }
 
 void* server_cmd(void *arg) {
@@ -158,7 +163,8 @@ int main(void) {
 	curl_global_init(CURL_GLOBAL_ALL);
 	// get devices list
 	num_dev = get_dev_list(&dev_list,station_id);
-
+	printf("get dev num:%d\n", dev_list.num);
+	
 	q = init_queue();
 	printf("start queue: %p\n",q);
 	rq = init_rqueue();
@@ -166,7 +172,7 @@ int main(void) {
 	t_modcmd cmd;
 	
 	int ret1, ret2, ret3,ret4;
-	ret1 = pthread_create(&th_server_cmd, NULL, server_cmd, NULL);
+//	ret1 = pthread_create(&th_server_cmd, NULL, server_cmd, NULL);
 	ret2 = pthread_create(&th_timer_cmd, NULL,timer_cmd, NULL);
 	ret3 = pthread_create(&th_read_cmd, NULL, read_cmd, NULL);
 //	ret4 = pthread_create(&th_report, NULL, report, NULL);
