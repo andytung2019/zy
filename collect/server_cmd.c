@@ -63,9 +63,9 @@ int parse_json_cmd(char *p_data, t_modcmd *pcmd){
 	pcmd->dev_id = atoi(dev_id);
 	pcmd->cmd= atoi(cmd_type);
    	pcmd->param =(int)atof(param)*10;
-	pcmd->isServ = 1;
-	printf(" cmd:%d, dev:%d,cmd:%d param:%d, isServ:%d\n",
-			 pcmd->cmd_id,pcmd->dev_id,pcmd->cmd,pcmd->param, pcmd->isServ);
+//	pcmd->isServ = 1;
+	printf(" cmd from server:%d, dev:%d,cmd:%d param:%d\n",
+			 pcmd->cmd_id,pcmd->dev_id,pcmd->cmd,pcmd->param);
 	return 0;
 }
 

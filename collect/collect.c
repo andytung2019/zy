@@ -12,7 +12,7 @@
 //#define REPORT_TIME (15*60) //every 15minutes  report
 #define REPORT_TIME (30) //every 2s  report only for test
 #define GET_SERV_TIME (20)
-#define TIMER_CMD_START 0xff000000
+#define TIMER_CMD_START 0x10000000
 #define TIMER_CMD_MAX 65535
 
 //very important!! station_id is the only id for 1 station and 1 collector
@@ -44,8 +44,6 @@ void* timer_cmd(void *arg) {
 				timer_cmd_id = (timer_cmd_id + 1) % TIMER_CMD_MAX;
 				cmd.cmd_id = TIMER_CMD_START + timer_cmd_id;
 			
-    				printf(" cmd: %d\n", cmd.cmd_id); 
-			
 				ret = en_queue(q, &cmd);
 		  		if (ret < 0) {
 					printf("add cmd:%04x to queue error !\n", cmd.cmd_id);			
@@ -60,8 +58,8 @@ void* timer_cmd(void *arg) {
 }
 
 void* server_cmd(void *arg) {
-	//char *cmd_url="http://149.28.67.234:8080/ZyTest/send";
-	char *cmd_url = "http://120.77.168.74/phpweb/htpst.php?station=20001";
+	char *cmd_url = "http://132.232.25.130:8080/station/control/getcmd?stationId=20001";
+	int dev_id = 0;
 
 	int ret, ret1,ret2 ;
 	char buf[1024];
@@ -71,19 +69,27 @@ void* server_cmd(void *arg) {
 		
 	while(1) {
 		memset(buf, 0, 1024);
-    	ret1 = get_url(cmd_url, (char*)&buf[0]);
+    		ret1 = get_url(cmd_url, (char*)&buf[0]);
 		ret2 = parse_json_cmd((char *)&buf[0], &cmd);	
-     	if( ret2 == 0) {
-   
-			ret = en_queue(q, &cmd);
-		  	if (ret < 0) {
-				printf("add server cmd:%04x to queue error !\n", cmd.cmd_id);			
-			 } else{
+     		if( ret2 == 0) {
+  			// change device id to positon 
+ 			dev_id = get_position(&dev_list, cmd.dev_id); //this position id is modbus id in fact;
+			if (dev_id < 0) {
+				printf(" run server cmd, get error device id\n");
+			
+			} else {
+			
+				cmd.dev_id = dev_id;
+				ret = en_queue(q, &cmd);
+		  		if (ret < 0) {
+					printf("add server cmd:%04x , dev_id:%d to queue error !\n", cmd.cmd_id , cmd.dev_id);			
+			 	} else{
 				
-				printf("add server cmd:%04x to queue ok !\n", cmd.cmd_id);			
+					printf("add server cmd:%04x, dev_id:%d to queue ok !\n", cmd.cmd_id, cmd.dev_id);			
+				}	
 			}
 
-     	} else {
+     		} else {
 			printf(" parse server command error :%d\n", ret2);
 		}	
 		sleep(GET_SERV_TIME);
@@ -110,8 +116,10 @@ void* read_cmd(void *arg) {
 			printf("de queue cmd:%04x \n", cmd.cmd_id);
 		
 			//cmd come from server, send return to server 
-	//		rt_serv = send_ret(&cmd);		
-			
+			if(cmd.cmd_id < TIMER_CMD_START) {	
+				printf("send cmd return: %04x, %d\n", cmd.cmd_id, cmd.cmd);
+				rt_serv = send_ret(&cmd);		
+			}
 			//run the cmd , and get return
 			rt_cmd = run_cmd(&cmd, &ret);
 			printf("run cmd: %04x, %d\n", cmd.cmd_id, cmd.cmd);
@@ -163,7 +171,10 @@ int main(void) {
 	curl_global_init(CURL_GLOBAL_ALL);
 	// get devices list
 	num_dev = get_dev_list(&dev_list,station_id);
-	printf("get dev num:%d\n", dev_list.num);
+	printf("\nget dev num:%d\n", dev_list.num);
+ 	for(int i = 0; i < dev_list.num; i++) {
+		printf("device: %d, position_id: %d\n", dev_list.dev[i].device_id, dev_list.dev[i].position_id);
+	}
 	
 	q = init_queue();
 	printf("start queue: %p\n",q);
@@ -172,7 +183,7 @@ int main(void) {
 	t_modcmd cmd;
 	
 	int ret1, ret2, ret3,ret4;
-//	ret1 = pthread_create(&th_server_cmd, NULL, server_cmd, NULL);
+	ret1 = pthread_create(&th_server_cmd, NULL, server_cmd, NULL);
 	ret2 = pthread_create(&th_timer_cmd, NULL,timer_cmd, NULL);
 	ret3 = pthread_create(&th_read_cmd, NULL, read_cmd, NULL);
 //	ret4 = pthread_create(&th_report, NULL, report, NULL);

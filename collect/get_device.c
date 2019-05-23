@@ -43,44 +43,60 @@ int get_device_id(DEV_LIST *p_dev_list, int position_id) {
 }
 
 int parse_json_device(char *text, DEV_LIST *p_dev_list) {
-	cJSON *json, *arrayItem, *item, *object;
+	cJSON  *item, *object;
 	int i;
 	int size = 0;
-
-	if (!json)
-	{
-		printf("Error before: [%s]\n",cJSON_GetErrorPtr());
+	if (NULL == text) {
+		printf(" cmd json text is null !\n");
 		return -1;
 	}
-	else
-	{
-		arrayItem=cJSON_GetObjectItem(json,"devices");
-		if(arrayItem!=NULL)
-		{
-			size=cJSON_GetArraySize(arrayItem);
+	printf("json string is :%s\n", text);
+
+	cJSON *root = NULL;
+	root = cJSON_Parse(text);
+        if(NULL == root) {
+       	    printf("server command parse error");
+             return -1;
+        }
+
+		 {
+			size=cJSON_GetArraySize(root);
 			printf("cJSON_GetArraySize: size=%d\n",size);
  
 			for(i=0;i<size;i++)
 			{
 				printf("i=%d\n",i);
-				object=cJSON_GetArrayItem(arrayItem,i);
+				object=cJSON_GetArrayItem(root,i);
  
-				item=cJSON_GetObjectItem(object,"device_id");
+				item=cJSON_GetObjectItem(object,"id");
 				if(item!=NULL)
 				{
-					printf("cJSON_GetObjectItem: type=%d, string is %s\n",item->type,item->string);
-					memcpy(p_dev_list->dev[i].device_id,item->valuestring,strlen(item->valuestring));
+
+					p_dev_list->dev[i].device_id = item->valueint;
 				}
  
-				item=cJSON_GetObjectItem(object,"position_id");
+				item=cJSON_GetObjectItem(object,"typeId");
+				if(item!=NULL) {
+				}
+				item=cJSON_GetObjectItem(object,"stationId");
+				if(item!=NULL) {
+				}
+				item=cJSON_GetObjectItem(object,"roomId");
+				if(item!=NULL) {
+				}
+ 
+				item=cJSON_GetObjectItem(object,"positionId");
 				if(item!=NULL)
 				{
-					printf("cJSON_GetObjectItem: type=%d, string is %s, valuestring=%s\n",item->type,item->string,item->valuestring);
-					memcpy(p_dev_list->dev[i].position_id,item->valuestring,strlen(item->valuestring));
+					p_dev_list->dev[i].position_id = item->valueint;
 				}
- 
+ 	
+				item=cJSON_GetObjectItem(object,"status");
+				if(item!=NULL) {
+				}
+
+			
 			}
-		}
 
 		p_dev_list->num = size;
 	
@@ -94,8 +110,8 @@ int parse_json_device(char *text, DEV_LIST *p_dev_list) {
 
 int get_dev_list(DEV_LIST *p_dev_list, int station_id){
 
+char *url="http://132.232.25.130:8080/station/device/listByStation?stationId=%d";
        
-char *url="http://132.232.25.130:8080/station/getdev?station=%d";
 int ret, ret1;
 char url_addr[100];
  char buf[1024];
@@ -103,13 +119,14 @@ char url_addr[100];
  memset(buf, 0, 1024);
 
 if( NULL == p_dev_list ) {
+   printf(" dev list is null \n");
     return -1;
 }
  sprintf(url_addr,url, station_id);
  printf("get device from: %s", url_addr);
  //get dev list from url
 
- ret = get_dev_url(url, (char*)&buf[0]);
+ ret = get_dev_url(url_addr, (char*)&buf[0]);
  ret1 = parse_json_device((char*)&buf[0], p_dev_list);
  if( ret1 <= 0 ) {
  

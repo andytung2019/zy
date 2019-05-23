@@ -9,8 +9,8 @@
 #include "get_device.h"
 
 #define CHARS_LEN 30
-#define POSTURL "http://132.232.25.130:8080/station/report"
-#define RET_URL  "http://132.232.25.130:8080/station/cmdret"
+#define POSTURL "http://132.232.25.130:8080/station/report/sendreport"
+#define RET_URL  "http://132.232.25.130:8080/station/control/cmdret"
 
 char *item[] = { "power","timer", "set_temp","set_humid",
 		"env_tempe", "env_humid", "onload", "error", 
@@ -198,9 +198,10 @@ cJSON* create_json_all( t_mod_ret *pret){
 
 
 	//position_id:
-	memset(out, 0, CHARS_LEN);
-	sprintf(out, "%u", pret->dev_id);
-	cJSON_AddStringToObject(root,"position_id", out);
+	// do not report position id 
+//	memset(out, 0, CHARS_LEN);
+//	sprintf(out, "%u", pret->dev_id);
+//	cJSON_AddStringToObject(root,"position_id", out);
      //time
 	time_d = time(&t);
 	memset(out, 0, CHARS_LEN);
@@ -347,15 +348,20 @@ cJSON* create_json_ret( t_modcmd *pcmd ){
 
 	//device_id:
 	memset(out, 0, CHARS_LEN);
-	sprintf(out, "%u", pcmd->dev_id);
+	int dev_id =  get_device_id(&dev_list, pcmd->dev_id);
+	if (dev_id < 0){
+		return NULL;
+	}
+	sprintf(out, "%u", dev_id);
 	cJSON_AddStringToObject(root,"device_id", out);
+
     
    	memset(out, 0, CHARS_LEN);
 	sprintf(out, "%u", pcmd->cmd_id);
 	cJSON_AddStringToObject(root,"cmd_id", out);
   
   	memset(out, 0, CHARS_LEN);
-	sprintf(out, "%u", 0);	//send return 0k
+	sprintf(out, "%u", 1);	//send return 0k
 	cJSON_AddStringToObject(root,"return_code", out);
    
    return root; 
